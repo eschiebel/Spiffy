@@ -25,4 +25,4 @@ then
 ```sh
 yarn run test
 ```
-but that hangs
+but that hangs somewhere in puppeteer, and I don't know why.
