@@ -1,0 +1,31 @@
+{
+  "name": "reg",
+  "version": "0.0.1",
+  "description": "regression testing test",
+  "main": "index.js",
+  "author": "me",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "test:update": "jest -u",
+    "mtest": "mocha --slow 10s --timeout 200s __tests__/regression.js"
+  },
+  "dependencies": {
+    "babel-env": "^2.4.1",
+    "babel-jest": "^21.2.0",
+    "chai": "^4.1.2",
+    "debug": "^3.1.0",
+    "jest": "^21.2.1",
+    "jest-image-snapshot": "^2.0.0",
+    "minimist": "^1.2.0",
+    "mocha": "^4.0.1",
+    "pixelmatch": "^4.0.2",
+    "pngjs": "^3.3.0",
+    "puppeteer": "^0.12.0"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    }
+  }
+}
