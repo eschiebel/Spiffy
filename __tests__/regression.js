@@ -1,3 +1,6 @@
+// mocha test script
+// finds all the instui component directories and
+// generates a test for each corresponding component in the docs app
 const assert = require('chai').assert
 const fs = require('fs')
 const path = require('path')

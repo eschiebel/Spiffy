@@ -1,7 +1,5 @@
 # This is an experiment
 
-assumes repo dir `reg` is adjacent to `instructure-ui 4.x`
-
 From the reg directory
 
 ```sh
@@ -10,13 +8,13 @@ node regress.js --ref=http://instructure.github.io/instructure-ui/ --tst=http://
 
 then look in the `reg/__tests__/__screenshots__/Alert` directory
 
-Or try
+Or, assuming `reg` repo dir is adjacent to `instructure-ui 4.x`, try
 ```sh
 yarn run mtest
 ```
-which will test all the components it can find (you will have to rename `__tests__\regression.js-save` to `regression.js`)
+which will test all the components it can find
 
-Or (afer renaming `regression.js`), use jest
+Or use jest
 
 ```sh
 yarn run test:update

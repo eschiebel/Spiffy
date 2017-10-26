@@ -1,2 +1,3 @@
 node_modules/
 __tests__/__screenshots__/
+__tests__/__snapshots__/

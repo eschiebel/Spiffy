@@ -1,3 +1,5 @@
+// jest test script.
+// for some reason hangs at the screenshot when not running jest -u
 import puppeteer from 'puppeteer'
 import {toMatchImageSnapshot} from 'jest-image-snapshot'
 

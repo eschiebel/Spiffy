@@ -26,6 +26,7 @@
   "jest": {
     "transform": {
       "^.+\\.jsx?$": "babel-jest"
-    }
+    },
+    "testMatch": ["**/__tests__/**/*.jest.js"]
   }
 }
