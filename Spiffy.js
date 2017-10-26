@@ -12,13 +12,15 @@ class Spiffy {
   // @param options:
   //        errorThreshold: percent different to be considered a failure (default = 0)
   //        getViewportFunc: function returning {width, height, deviceScaleFactor} of the viewport we're capturing
-  constructor (refUrl, tstUrl, outpath, options = {}) {
-    this.ref = refUrl
-    this.tst = tstUrl
-    this.out = outpath
+  constructor (options) {
+    this.ref = options.refUrl
+    this.tst = options.tstUrl
+    this.out = options.outpath
     this.diffFilepath = path.resolve(this.out, 'diff.png')
     this.errorThreshold = options.threshold || 0
     this.getViewportFunc = options.getViewportFunc
+    this.update = !!options.refUrl
+    this.headless = 'headless' in options ? !!options.headless : true
 
     if (!fs.existsSync(this.out)) {
       fs.mkdirSync(path.resolve(__dirname, this.out))
@@ -28,34 +30,39 @@ class Spiffy {
   // The test driver.
   // resolves the returned promise if the screen captures match w/in the given threshold (default 0)
   // rejects the returned promise with a useful message if not
-  async test() {
+  async test () {
     return new Promise(async (resolve, reject) => {
       try {
-        // capture the 2 web pages
-        let refScreen = await this.capture(this.ref, path.resolve(this.out, 'ref.png'))
-        let tstScreen = await this.capture(this.tst, path.resolve(this.out, 'tst.png'))
-        debug('capture done')
+        const updateOnly = this.update && !this.tst
 
-        // convert the raw image data to png images
-        refScreen = rawToPng(refScreen)
-        tstScreen = rawToPng(tstScreen)
-
-        // compute the difference
-        const {png, stats} = this.diff(refScreen, tstScreen)
-
-        // save the diff image
-        writePNG(png, this.diffFilepath)
-
-        // how'd we do?
-        debug(stats.percentage, ' > ', this.errorThreshold, '?')
-        if (stats.percentage > this.errorThreshold) {
-          const pct = Math.round(stats.percentage * 10000) / 10000 + '%'
-          const failMessage = `${pct} different, open ${this.diffFilepath}`
-          debug('failed test, rejecting')
-          reject(new Error(failMessage))
-        } else {
-          debug('resolving')
+        // capture the web page(s)
+        let refScreen = await this.findRef(this.ref, path.resolve(this.out, 'ref.png'))
+        writePNG(refScreen, path.resolve(this.out, 'ref.png'))
+        if( updateOnly ) {
+          debug('update only')
           resolve(true)
+        } else {
+          let tstScreen = await this.capture(this.tst)
+          writePNG(tstScreen, path.resolve(this.out, 'tst.png'))
+          debug('capture done')
+
+          // compute the difference
+          const {png, stats} = this.diff(refScreen, tstScreen)
+
+          // save the diff image
+          writePNG(png, this.diffFilepath)
+
+          // how'd we do?
+          debug(stats.percentage, ' > ', this.errorThreshold, '?')
+          if (stats.percentage > this.errorThreshold) {
+            const pct = Math.round(stats.percentage * 10000) / 10000 + '%'
+            const failMessage = `${pct} different, open ${this.diffFilepath}`
+            debug('failed test, rejecting')
+            reject(new Error(failMessage))
+          } else {
+            debug('resolving')
+            resolve(true)
+          }
         }
       } catch (err) {
         debug('rejecting test')
@@ -64,13 +71,26 @@ class Spiffy {
     })
   }
 
+  async findRef (url, capturePath) {
+    let refImg
+    if(url) {
+      refImg = await this.capture(url)
+    } else {
+      // look for it on disk
+      if (fs.existsSync(capturePath)) {
+        refImg = readPNG (capturePath)
+      } else {
+        throw new Error(`Cannot find reference image '${capturePath}'`)
+      }
+    }
+    return refImg
+  }
   // capture a screnshot of the given URL and save it in the file <name>.png
   // @param url: URL to the page we're capturing
-  // @param capturePath: base name of the image file we save of the screen capture
-  // @returns the screen capture raw image data
-  async capture(url, capturePath) {
-    debug('capture', url, 'as', capturePath)
-    const browser = await puppeteer.launch({ headless: false });
+  // @returns the screen capture png image
+  async capture (url) {
+    debug('capture', url)
+    const browser = await puppeteer.launch({ headless: this.headless });
     debug('got browser')
     const page = await browser.newPage();
     debug('got page')
@@ -84,12 +104,17 @@ class Spiffy {
       page.setViewport(dimensions)
       debug('set viewport')
     }
-    const screenshot = await page.screenshot({path: capturePath});
+    // Note: while page.screenshot() can save the image itself, the png data I get
+    // when reading the file is different, so I can't compare to a later capture.
+    // When we use pngjs to both write and read, the diff works correctly
+    const screenshot = await page.screenshot();
     debug('got screenshot')
 
     await browser.close()
     debug('browser closed')
-    return screenshot
+
+    // convert raw data to a png image structure
+    return rawToPng(screenshot)
   }
 
   // diffFromFile (pathA, pathB, pathDiff) {
@@ -107,7 +132,7 @@ class Spiffy {
   // @param imgA: first png image
   // @param imgB: second png image
   // @returns object with diff stats and the difference png image
-  diff(imgA, imgB) {
+  diff (imgA, imgB) {
     debug('diffImg...')
     // all 3 images must be the same size, so take the smallest size
     // (though they should be the same)
