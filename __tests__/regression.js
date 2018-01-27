@@ -6,8 +6,6 @@ const fs = require('fs')
 const path = require('path')
 const Spiffy = require('../Spiffy')
 
-
-
 const options = {
   errorThreshold: 0,
   getViewportFunc: function () {
@@ -18,25 +16,33 @@ const options = {
     }
   }
 }
-const ref = 'http://instructure.github.io/instructure-ui/'
-const tst = 'http://0.0.0.0:8001/'
-const out = './__tests__/__screenshots__/'
-const component = ''
+const ref = process.env.refUrl // 'http://instructure.github.io/instructure-ui/'
+const tst = process.env.tstUrl // 'http://0.0.0.0:8001/'
+const out = process.env.outDir || './__tests__/__screenshots__/'
+const componentsDir = path.resolve(__dirname, '../../instructure-ui/packages/ui-core/src/components')
+const component = process.env.componentName
+const update = !!ref
 
 describe('regression', () => {
-  const componentsDir = path.resolve(__dirname, '../../instructure-ui/packages/ui-core/src/components')
-
-  fs.readdirSync(componentsDir).forEach((c) => {
-    genericTest(c)()
-  })
+  if (!component) {
+    fs.readdirSync(componentsDir).forEach((c) => {
+      genericTest(c)()
+    })
+  } else {
+    genericTest(component)()
+  }
 })
 
-
 function genericTest (cname) {
-  const outdir = path.resolve(out, cname || 'home')
-  return function (sniffy) {
+  const outpath = path.resolve(out, cname || 'home')
+  return function () {
     it(`${cname} renders correctly`, async () => {
-      const spiffy = new Spiffy(`${ref}#${cname}`, `${tst}#${cname}`, outdir, options)
+      let opts = Object.assign({}, options, {outpath: outpath})
+
+      opts.refUrl = ref ? `${ref}#${cname}` : null
+      opts.tstUrl = tst ? `${tst}#${cname}` : null
+      const spiffy = new Spiffy(opts)
+
       const result = await spiffy.test()
       assert(result == true, result)
     })

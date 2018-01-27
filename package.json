@@ -1,14 +1,15 @@
 {
-  "name": "reg",
-  "version": "0.0.1",
-  "description": "regression testing test",
-  "main": "index.js",
+  "name": "Spiffy",
+  "version": "0.0.2",
+  "description": "regression testing",
+  "main": "test-one.js",
   "author": "me",
   "license": "MIT",
   "scripts": {
     "test": "jest",
     "test:update": "jest -u",
-    "mtest": "mocha --slow 10s --timeout 200s __tests__/regression.js"
+    "mtest:update": "/bin/bash regress.sh --ref http://instructure.github.io/instructure-ui/ $*",
+    "mtest": "/bin/bash regress.sh --tst http://0.0.0.0:8001 $*"
   },
   "dependencies": {
     "babel-env": "^2.4.1",
@@ -27,6 +28,8 @@
     "transform": {
       "^.+\\.jsx?$": "babel-jest"
     },
-    "testMatch": ["**/__tests__/**/*.jest.js"]
+    "testMatch": [
+      "**/__tests__/**/*.jest.js"
+    ]
   }
 }
